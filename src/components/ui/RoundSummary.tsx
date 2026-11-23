@@ -32,6 +32,9 @@ export function RoundSummary({
 
   useEffect(() => {
     audioManager.playFanfare();
+    const praiseTimer = setTimeout(() => {
+      audioManager.playPraise();
+    }, 520);
     if (stars >= 2) {
       confetti({
         particleCount: 85,
@@ -40,6 +43,7 @@ export function RoundSummary({
         colors: ["#F59E0B", "#22C55E", "#3B82F6", "#F43F5E", "#FACC15"],
       });
     }
+    return () => clearTimeout(praiseTimer);
   }, [stars]);
 
   const praise =

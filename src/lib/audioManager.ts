@@ -202,6 +202,21 @@ class AudioManager {
       this.playTone(n, idx * 0.1, idx === notes.length - 1 ? 0.45 : 0.16, "triangle", 0.17);
     });
   }
+
+  public playPraise() {
+    if (this.muted) return;
+    const clips = [
+      { key: "praise-great", text: "Great!" },
+      { key: "praise-brilliant", text: "Brilliant!" },
+      { key: "praise-super", text: "Super!" },
+      { key: "praise-excellent", text: "Excellent!" },
+      { key: "praise-fantastic", text: "Fantastic!" },
+      { key: "praise-well-done", text: "Well done!" },
+      { key: "praise-good-job", text: "Good job!" },
+    ];
+    const pick = clips[Math.floor(Math.random() * clips.length)];
+    void this.speak(pick.text, { audioKey: pick.key, lang: "en-GB", slow: false });
+  }
 }
 
 export const audioManager = new AudioManager();

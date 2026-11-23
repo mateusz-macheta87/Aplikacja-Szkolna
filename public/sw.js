@@ -1,4 +1,4 @@
-const CACHE_NAME = "bzyczek-pwa-v3";
+const CACHE_NAME = "bzyczek-pwa-v4";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
