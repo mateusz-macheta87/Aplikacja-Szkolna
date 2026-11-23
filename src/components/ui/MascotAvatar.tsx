@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { FRAME_CHARMS, HERO_OUTFITS } from "@/content/rewards";
 import { useProgress } from "@/lib/progressStore";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -10,6 +11,7 @@ interface MascotAvatarProps {
   cheering?: boolean;
   className?: string;
   showAccessories?: boolean;
+  outfitOverrideId?: string;
 }
 
 export function MascotAvatar({
@@ -17,14 +19,27 @@ export function MascotAvatar({
   cheering = false,
   className = "",
   showAccessories = true,
+  outfitOverrideId,
 }: MascotAvatarProps) {
   const { state } = useProgress();
-  const equipped = showAccessories ? state.equippedAccessories : [];
-  const src = cheering
-    ? `${BASE_PATH}/art/mascot-cheering.webp`
-    : `${BASE_PATH}/art/mascot-main.webp`;
 
-  const badgeSize = Math.max(18, Math.round(size * 0.28));
+  const chosenOutfitId = outfitOverrideId ?? state.activeOutfitId;
+  const outfit =
+    HERO_OUTFITS.find((o) => o.id === chosenOutfitId) ?? HERO_OUTFITS[0];
+
+  // If cheering and wearing the default outfit, show cheering pose;
+  // if wearing a special purchased outfit (Princess / Spring / Winter), always showcase her beloved outfit!
+  const artFile =
+    cheering && outfit.id === "outfit-default"
+      ? "mascot-cheering.webp"
+      : outfit.artFile;
+
+  const activeCharm =
+    showAccessories && state.activeCharmId
+      ? FRAME_CHARMS.find((c) => c.id === state.activeCharmId)
+      : undefined;
+
+  const charmSize = Math.max(24, Math.round(size * 0.34));
 
   return (
     <div
@@ -40,136 +55,37 @@ export function MascotAvatar({
       }}
     >
       <img
-        src={src}
-        alt="Bzyczek"
+        src={`${BASE_PATH}/art/${artFile}`}
+        alt={`Bzyczek — ${outfit.namePl}`}
         width={size}
         height={size}
         className="mascot-avatar"
-        style={{ width: size, height: size, borderRadius: Math.round(size * 0.28) }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: Math.round(size * 0.28),
+        }}
       />
 
-      {equipped.includes("acc-crown") && (
-        <span
-          aria-hidden="true"
+      {activeCharm && (
+        <img
+          src={`${BASE_PATH}/art/${activeCharm.artFile}`}
+          alt={activeCharm.namePl}
+          width={charmSize}
+          height={charmSize}
           style={{
             position: "absolute",
-            top: -Math.round(badgeSize * 0.35),
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: badgeSize,
-            lineHeight: 1,
-            filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.2))",
+            right: -Math.round(charmSize * 0.24),
+            top: -Math.round(charmSize * 0.24),
+            width: charmSize,
+            height: charmSize,
+            borderRadius: "50%",
+            border: "2.5px solid #FFFFFF",
+            boxShadow: "0 4px 10px rgba(120, 74, 24, 0.24)",
+            objectFit: "cover",
+            background: "#FFFBF2",
           }}
-        >
-          👑
-        </span>
-      )}
-
-      {equipped.includes("acc-flower") && !equipped.includes("acc-crown") && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: -Math.round(badgeSize * 0.2),
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: badgeSize,
-            lineHeight: 1,
-          }}
-        >
-          🌸
-        </span>
-      )}
-
-      {equipped.includes("acc-wings") && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            right: -Math.round(badgeSize * 0.35),
-            top: "14%",
-            fontSize: badgeSize,
-            lineHeight: 1,
-          }}
-        >
-          🦋
-        </span>
-      )}
-
-      {equipped.includes("acc-wand") && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: -Math.round(badgeSize * 0.3),
-            bottom: "10%",
-            fontSize: badgeSize,
-            lineHeight: 1,
-          }}
-        >
-          🪄
-        </span>
-      )}
-
-      {equipped.includes("acc-scarf") && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            right: -Math.round(badgeSize * 0.2),
-            bottom: -Math.round(badgeSize * 0.15),
-            fontSize: Math.round(badgeSize * 0.9),
-            lineHeight: 1,
-          }}
-        >
-          🧣
-        </span>
-      )}
-
-      {equipped.includes("acc-glasses") && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: -Math.round(badgeSize * 0.2),
-            top: "10%",
-            fontSize: Math.round(badgeSize * 0.85),
-            lineHeight: 1,
-          }}
-        >
-          🕶️
-        </span>
-      )}
-
-      {equipped.includes("acc-pin") && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: "50%",
-            bottom: -Math.round(badgeSize * 0.28),
-            transform: "translateX(-50%)",
-            fontSize: Math.round(badgeSize * 0.82),
-            lineHeight: 1,
-          }}
-        >
-          ⭐
-        </span>
-      )}
-
-      {equipped.includes("acc-pom") && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            right: -Math.round(badgeSize * 0.15),
-            top: -Math.round(badgeSize * 0.15),
-            fontSize: Math.round(badgeSize * 0.82),
-            lineHeight: 1,
-          }}
-        >
-          ❄️
-        </span>
+        />
       )}
     </div>
   );

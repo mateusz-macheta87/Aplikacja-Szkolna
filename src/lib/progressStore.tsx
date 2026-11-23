@@ -52,6 +52,8 @@ export interface PersistedState {
   unlockedStickers: string[];
   ownedAccessories: string[];
   equippedAccessories: string[];
+  activeOutfitId: string;
+  activeCharmId: string | null;
   modules: Record<string, ModuleProgress>;
   customModules: LearningModule[];
 }
@@ -69,8 +71,10 @@ const DEFAULT_STATE: PersistedState = {
   lastActiveDate: null,
   activeDates: [],
   unlockedStickers: [],
-  ownedAccessories: [],
+  ownedAccessories: ["outfit-default"],
   equippedAccessories: [],
+  activeOutfitId: "outfit-default",
+  activeCharmId: null,
   modules: {},
   customModules: [],
 };
@@ -136,6 +140,8 @@ interface ProgressContextValue {
   openTreasureChest: (moduleId: string) => void;
   buyAccessory: (accessoryId: string, cost: number) => boolean;
   toggleAccessory: (accessoryId: string) => void;
+  equipOutfit: (outfitId: string) => void;
+  equipCharm: (charmId: string | null) => void;
   markVocabMastered: (moduleId: string, vocabId: string, mastered: boolean) => void;
   recordItemResult: (moduleId: string, itemId: string, correct: boolean) => void;
   toggleMuted: () => void;
@@ -168,16 +174,20 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
               normalizedModules[k] = normalizeModuleProgress(v);
             }
           }
+          const owned = Array.isArray(parsed.ownedAccessories) ? parsed.ownedAccessories : [];
+          if (!owned.includes("outfit-default")) owned.push("outfit-default");
           const merged: PersistedState = {
             ...DEFAULT_STATE,
             ...parsed,
             spendableStars: parsed.spendableStars ?? parsed.totalStars ?? 0,
             activeDates: Array.isArray(parsed.activeDates) ? parsed.activeDates : [],
             unlockedStickers: Array.isArray(parsed.unlockedStickers) ? parsed.unlockedStickers : [],
-            ownedAccessories: Array.isArray(parsed.ownedAccessories) ? parsed.ownedAccessories : [],
+            ownedAccessories: owned,
             equippedAccessories: Array.isArray(parsed.equippedAccessories)
               ? parsed.equippedAccessories
               : [],
+            activeOutfitId: parsed.activeOutfitId ?? "outfit-default",
+            activeCharmId: parsed.activeCharmId ?? null,
             modules: normalizedModules,
             customModules: Array.isArray(parsed.customModules) ? parsed.customModules : [],
           };
@@ -401,16 +411,44 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         if (prev.ownedAccessories.includes(accessoryId) || prev.spendableStars < cost) {
           return prev;
         }
+        const isOutfit = accessoryId.startsWith("outfit-");
+        const isCharm = accessoryId.startsWith("charm-");
         return {
           ...prev,
           spendableStars: prev.spendableStars - cost,
           ownedAccessories: [...prev.ownedAccessories, accessoryId],
           equippedAccessories: [...prev.equippedAccessories, accessoryId],
+          activeOutfitId: isOutfit ? accessoryId : prev.activeOutfitId,
+          activeCharmId: isCharm ? accessoryId : prev.activeCharmId,
         };
       });
       return true;
     },
     [state.ownedAccessories, state.spendableStars, persist]
+  );
+
+  const equipOutfit = useCallback(
+    (outfitId: string) => {
+      persist((prev) => {
+        if (!prev.ownedAccessories.includes(outfitId) && outfitId !== "outfit-default") {
+          return prev;
+        }
+        return { ...prev, activeOutfitId: outfitId };
+      });
+    },
+    [persist]
+  );
+
+  const equipCharm = useCallback(
+    (charmId: string | null) => {
+      persist((prev) => {
+        if (charmId && !prev.ownedAccessories.includes(charmId)) {
+          return prev;
+        }
+        return { ...prev, activeCharmId: charmId };
+      });
+    },
+    [persist]
   );
 
   const toggleAccessory = useCallback(
@@ -589,6 +627,8 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         openTreasureChest,
         buyAccessory,
         toggleAccessory,
+        equipOutfit,
+        equipCharm,
         markVocabMastered,
         recordItemResult,
         toggleMuted,

@@ -7,6 +7,7 @@ export interface StickerDef {
   audioKey?: string;
   unlockHint: string;
   visual: VisualSpec;
+  artImage?: string;
   bg: string;
 }
 
@@ -18,7 +19,7 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-wearing-red-coat",
     unlockHint: "Ukończ przystanek 1: Clothes",
     visual: { kind: "coat", color: "red" },
-    bg: "#FFE4E6",
+    bg: "#FFF0F2",
   },
   {
     id: "stk-colours",
@@ -27,7 +28,7 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-colour-hat-red",
     unlockHint: "Ukończ przystanek 2: Colours",
     visual: { kind: "color-swatch", color: "purple" },
-    bg: "#F3E8FF",
+    bg: "#F8F0FF",
   },
   {
     id: "stk-wearing",
@@ -36,7 +37,8 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-wearing-yellow-jumper",
     unlockHint: "Ukończ przystanek 3: I'm wearing",
     visual: { kind: "jumper", color: "yellow" },
-    bg: "#FEF3C7",
+    artImage: "item-yellow-jumper.webp",
+    bg: "#FFF8E1",
   },
   {
     id: "stk-dressup",
@@ -45,25 +47,27 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-wearing-purple-shorts",
     unlockHint: "Ukończ przystanek 4: Dress up",
     visual: { kind: "shorts", color: "purple" },
-    bg: "#EDE9FE",
+    bg: "#F3ECFF",
   },
   {
     id: "stk-seasons",
-    namePl: "Jesienne drzewo",
+    namePl: "Złota jesień",
     phraseEn: "It's autumn.",
     audioKey: "s-its-autumn",
     unlockHint: "Ukończ przystanek 5: Seasons",
     visual: { kind: "autumn" },
-    bg: "#FFEDD5",
+    artImage: "season-autumn.webp",
+    bg: "#FFF3E0",
   },
   {
     id: "stk-weather",
-    namePl: "Uśmiechnięte słońce",
-    phraseEn: "It's sunny.",
-    audioKey: "s-its-sunny",
+    namePl: "Tęczowy deszczyk",
+    phraseEn: "It's rainy.",
+    audioKey: "s-its-rainy",
     unlockHint: "Ukończ przystanek 6: Weather",
-    visual: { kind: "sunny" },
-    bg: "#FEF9C3",
+    visual: { kind: "rainy" },
+    artImage: "weather-rainy.webp",
+    bg: "#FFF1F5",
   },
   {
     id: "stk-listen",
@@ -72,7 +76,7 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-wearing-pink-skirt",
     unlockHint: "Ukończ przystanek 7: Bzyczek says",
     visual: { kind: "skirt", color: "pink" },
-    bg: "#FCE7F3",
+    bg: "#FDF0F7",
   },
   {
     id: "stk-write",
@@ -81,16 +85,17 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-wearing-blue-trousers",
     unlockHint: "Ukończ przystanek 8: Listen & write",
     visual: { kind: "trousers", color: "blue" },
-    bg: "#DBEAFE",
+    bg: "#EDF6FF",
   },
   {
     id: "stk-test",
-    namePl: "Mistrzyni sprawdzianu",
+    namePl: "Korona Mistrzyni",
     phraseEn: "I love my new clothes.",
     audioKey: "s-love-new-clothes",
     unlockHint: "Ukończ przystanek 9: Test",
     visual: { kind: "shoes", color: "yellow" },
-    bg: "#DCFCE7",
+    artImage: "art-crown.webp",
+    bg: "#FFF9E6",
   },
   {
     id: "stk-treasure",
@@ -99,25 +104,28 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-favourite-summer",
     unlockHint: "Otwórz Skarb na końcu mapy!",
     visual: { kind: "summer" },
-    bg: "#FEF3C7",
+    artImage: "treasure-chest.webp",
+    bg: "#FFF6DC",
   },
   {
     id: "stk-daily",
-    namePl: "Wiosenny kwiat",
+    namePl: "Wiosenne kwiaty",
     phraseEn: "It's spring.",
     audioKey: "s-its-spring",
     unlockHint: "Zrób Zadanie dnia!",
     visual: { kind: "spring" },
-    bg: "#FCE7F3",
+    artImage: "season-spring.webp",
+    bg: "#FFF0F6",
   },
   {
     id: "stk-blitz",
-    namePl: "Błyskawica",
+    namePl: "Zimowa bajka",
     phraseEn: "It's snowy. It's winter.",
     audioKey: "s-snowy-winter",
     unlockHint: "Zagraj w Błyskawicę!",
-    visual: { kind: "snowy" },
-    bg: "#E0F2FE",
+    visual: { kind: "winter" },
+    artImage: "season-winter.webp",
+    bg: "#EEF7FF",
   },
   {
     id: "stk-duel",
@@ -126,91 +134,113 @@ export const STICKERS: StickerDef[] = [
     audioKey: "s-goodnight",
     unlockHint: "Zagraj w Pojedynek z rodzicem!",
     visual: { kind: "ice-cream" },
-    bg: "#FFE4E6",
+    artImage: "duel-parent.webp",
+    bg: "#FFF2EC",
   },
   {
     id: "stk-dictionary",
-    namePl: "Odkrywczyni słówek",
+    namePl: "Motylek słówek",
     phraseEn: "I'm wearing pyjamas.",
     audioKey: "s-wearing-pyjamas",
     unlockHint: "Opanuj 8 słówek w Słowniczku",
     visual: { kind: "pyjamas", color: "pink" },
-    bg: "#F3E8FF",
+    artImage: "art-butterfly.webp",
+    bg: "#F8F1FF",
   },
 ];
 
-export interface WardrobeAccessory {
+export interface HeroOutfit {
   id: string;
   namePl: string;
   description: string;
   cost: number;
-  badgeEmoji: string;
-  overlayStyle: "crown" | "flower-crown" | "heart-glasses" | "rainbow-scarf" | "fairy-wings" | "magic-wand" | "winter-pom" | "gold-star-pin";
+  artFile: string;
+  previewFile?: string;
+  badgeText: string;
 }
 
-export const WARDROBE_ACCESSORIES: WardrobeAccessory[] = [
+export const HERO_OUTFITS: HeroOutfit[] = [
   {
-    id: "acc-flower",
-    namePl: "Wiosenny wianek",
-    description: "Kwiatowy wianek na czapeczkę Bzyczka",
-    cost: 3,
-    badgeEmoji: "🌸",
-    overlayStyle: "flower-crown",
+    id: "outfit-default",
+    namePl: "Strój Podróżniczki",
+    description: "Czerwony płaszczyk, żółta czapeczka i ulubiona książeczka!",
+    cost: 0,
+    artFile: "mascot-main.webp",
+    badgeText: "Startowy",
   },
   {
-    id: "acc-glasses",
-    namePl: "Okulary serduszka",
-    description: "Różowe słoneczne okulary na lato",
+    id: "outfit-spring",
+    namePl: "Wiosenny Wianek",
+    description: "Kwitnący wianek ze stokrotek i bukiet polnych kwiatków.",
     cost: 4,
-    badgeEmoji: "🕶️",
-    overlayStyle: "heart-glasses",
+    artFile: "hero-spring.webp",
+    previewFile: "hero-spring.webp",
+    badgeText: "Wiosna",
   },
   {
-    id: "acc-scarf",
-    namePl: "Tęczowy szalik",
-    description: "Ciepły, miękki szalik na zimę",
-    cost: 5,
-    badgeEmoji: "🧣",
-    overlayStyle: "rainbow-scarf",
-  },
-  {
-    id: "acc-pin",
-    namePl: "Złota gwiazdka",
-    description: "Błyszcząca przypinka mistrzyni",
-    cost: 5,
-    badgeEmoji: "⭐",
-    overlayStyle: "gold-star-pin",
-  },
-  {
-    id: "acc-crown",
-    namePl: "Korona Księżniczki",
-    description: "Lśniąca złota korona z klejnotami",
-    cost: 8,
-    badgeEmoji: "👑",
-    overlayStyle: "crown",
-  },
-  {
-    id: "acc-wings",
-    namePl: "Skrzydła motyla",
-    description: "Bajkowe pastelowe skrzydełka",
-    cost: 10,
-    badgeEmoji: "🦋",
-    overlayStyle: "fairy-wings",
-  },
-  {
-    id: "acc-wand",
-    namePl: "Czarodziejska różdżka",
-    description: "Rozsypuje magiczne iskierki",
-    cost: 12,
-    badgeEmoji: "🪄",
-    overlayStyle: "magic-wand",
-  },
-  {
-    id: "acc-pom",
-    namePl: "Zimowy pomponik",
-    description: "Puszysta czapka na śnieżną pogodę",
+    id: "outfit-winter",
+    namePl: "Zimowy Szalik i Czapka",
+    description: "Pastelowa czapka z puszystym pomponem i tęczowy szalik.",
     cost: 6,
-    badgeEmoji: "❄️",
-    overlayStyle: "winter-pom",
+    artFile: "hero-winter.webp",
+    previewFile: "hero-winter.webp",
+    badgeText: "Zima",
+  },
+  {
+    id: "outfit-princess",
+    namePl: "Korona Księżniczki",
+    description: "Lśniąca złota korona z klejnotami i różowa peleryna!",
+    cost: 8,
+    artFile: "hero-princess.webp",
+    previewFile: "hero-princess.webp",
+    badgeText: "Bajkowy!",
+  },
+  {
+    id: "outfit-star",
+    namePl: "Gwiazdka Mistrzyni",
+    description: "Radosny strój świętowania w deszczu złotych gwiazdek!",
+    cost: 10,
+    artFile: "mascot-cheering.webp",
+    previewFile: "mascot-cheering.webp",
+    badgeText: "Mistrz!",
+  },
+];
+
+export interface FrameCharm {
+  id: string;
+  namePl: string;
+  description: string;
+  cost: number;
+  artFile: string;
+}
+
+export const FRAME_CHARMS: FrameCharm[] = [
+  {
+    id: "charm-butterfly",
+    namePl: "Bajkowy Motylek",
+    description: "Kolorowy motylek zawsze lata obok Twojej bohaterki!",
+    cost: 3,
+    artFile: "art-butterfly.webp",
+  },
+  {
+    id: "charm-star",
+    namePl: "Złota Gwiazdka",
+    description: "Uśmiechnięta gwiazdka ze wstążeczką przy portrecie.",
+    cost: 5,
+    artFile: "art-gold-star.webp",
+  },
+  {
+    id: "charm-umbrella",
+    namePl: "Tęczowa Parasolka",
+    description: "Różowa parasolka w groszki z małą tęczą.",
+    cost: 7,
+    artFile: "umbrella-review.webp",
+  },
+  {
+    id: "charm-treasure",
+    namePl: "Skrzyneczka Iskier",
+    description: "Czarodziejska szkatułka pełna złotych iskier.",
+    cost: 9,
+    artFile: "treasure-chest.webp",
   },
 ];

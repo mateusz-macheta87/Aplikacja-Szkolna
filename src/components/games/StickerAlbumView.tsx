@@ -82,7 +82,22 @@ export function StickerAlbumView({ onBack }: StickerAlbumViewProps) {
             >
               {isUnlocked ? (
                 <>
-                  <StoryVisual visual={stk.visual} size={86} />
+                  {stk.artImage ? (
+                    <img
+                      src={`${BASE_PATH}/art/${stk.artImage}`}
+                      alt={stk.namePl}
+                      width={92}
+                      height={92}
+                      style={{
+                        borderRadius: 20,
+                        border: "3px solid #FFFFFF",
+                        boxShadow: "0 4px 12px rgba(102, 70, 32, 0.14)",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <StoryVisual visual={stk.visual} size={90} />
+                  )}
                   <div style={{ fontWeight: 800, fontSize: "1rem" }}>{stk.namePl}</div>
                   <div
                     style={{
