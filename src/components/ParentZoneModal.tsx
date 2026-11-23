@@ -19,9 +19,10 @@ import { unit1MrBeetleClothes } from "@/content/subjects/english/unit1-mr-beetle
 
 interface ParentZoneViewProps {
   onBack: () => void;
+  preUnlocked?: boolean;
 }
 
-export function ParentZoneView({ onBack }: ParentZoneViewProps) {
+export function ParentZoneView({ onBack, preUnlocked = false }: ParentZoneViewProps) {
   const {
     state,
     getModuleProgress,
@@ -40,7 +41,7 @@ export function ParentZoneView({ onBack }: ParentZoneViewProps) {
     return { a, b, answer: a * b };
   });
 
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(preUnlocked);
   const [gateInput, setGateInput] = useState("");
   const [gateError, setGateError] = useState(false);
 

@@ -37,9 +37,10 @@ const CRAYONS: ColourName[] = [
 interface DressUpCrayonGameProps {
   module: LearningModule;
   onBack: () => void;
+  onComplete?: (stars: number) => void;
 }
 
-export function DressUpCrayonGame({ module, onBack }: DressUpCrayonGameProps) {
+export function DressUpCrayonGame({ module, onBack, onComplete }: DressUpCrayonGameProps) {
   const { recordGameCompletion, recordItemResult } = useProgress();
   const [tasks, setTasks] = useState<DressUpTask[]>(module.dressUpTasks);
   const [idx, setIdx] = useState(0);
@@ -107,7 +108,8 @@ export function DressUpCrayonGame({ module, onBack }: DressUpCrayonGameProps) {
     audioManager.stopSpeech();
     if (idx + 1 >= tasks.length) {
       const stars = computeStars(correctCount, tasks.length);
-      recordGameCompletion(module.id, "dress-up", stars);
+      if (onComplete) onComplete(stars);
+      else recordGameCompletion(module.id, "dress-up", stars);
       setFinished(true);
     } else {
       setIdx((i) => i + 1);
@@ -148,11 +150,12 @@ export function DressUpCrayonGame({ module, onBack }: DressUpCrayonGameProps) {
   return (
     <div className="game-stage">
       <GameHeader
-        title="Kredki i Garderoba"
+        title="Dress up — Ubieranka"
         onBack={onBack}
         currentStep={idx + 1}
         totalSteps={tasks.length}
         score={correctCount}
+        moduleForCheatSheet={module}
       />
 
       <div className="card" style={{ padding: "18px 22px" }}>

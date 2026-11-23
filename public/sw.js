@@ -1,4 +1,4 @@
-const CACHE_NAME = "bzyczek-pwa-v1";
+const CACHE_NAME = "bzyczek-pwa-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
@@ -23,8 +23,12 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Cache-first for MP3 audio and icons, stale-while-revalidate for pages/JS/CSS
-  if (url.pathname.includes("/audio/") || url.pathname.includes("/icons/")) {
+  // Cache-first for MP3 audio, watercolor art, and icons
+  if (
+    url.pathname.includes("/audio/") ||
+    url.pathname.includes("/icons/") ||
+    url.pathname.includes("/art/")
+  ) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) =>
         cache.match(req).then(

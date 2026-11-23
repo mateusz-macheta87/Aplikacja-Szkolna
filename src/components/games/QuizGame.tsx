@@ -17,9 +17,17 @@ interface QuizGameProps {
   title: string;
   questions: QuizQuestion[];
   onBack: () => void;
+  onComplete?: (stars: number, examScore?: { correct: number; total: number }) => void;
 }
 
-export function QuizGame({ module, mode, title, questions, onBack }: QuizGameProps) {
+export function QuizGame({
+  module,
+  mode,
+  title,
+  questions,
+  onBack,
+  onComplete,
+}: QuizGameProps) {
   const { recordGameCompletion, recordItemResult } = useProgress();
 
   const [queue, setQueue] = useState<QuizQuestion[]>(() => shuffleArray(questions));
@@ -70,12 +78,13 @@ export function QuizGame({ module, mode, title, questions, onBack }: QuizGamePro
     audioManager.stopSpeech();
     if (idx + 1 >= queue.length) {
       const stars = computeStars(correctCount, queue.length);
-      recordGameCompletion(
-        module.id,
-        mode,
-        stars,
-        mode === "exam" ? { correct: correctCount, total: queue.length } : undefined
-      );
+      const examScore =
+        mode === "exam" ? { correct: correctCount, total: queue.length } : undefined;
+      if (onComplete) {
+        onComplete(stars, examScore);
+      } else {
+        recordGameCompletion(module.id, mode, stars, examScore);
+      }
       setFinished(true);
     } else {
       setIdx((i) => i + 1);
@@ -97,7 +106,7 @@ export function QuizGame({ module, mode, title, questions, onBack }: QuizGamePro
   if (finished) {
     return (
       <RoundSummary
-        title={mode === "exam" ? "Próbny Sprawdzian ukończony!" : "Brawo! Audio Quiz ukończony!"}
+        title={mode === "exam" ? "Próbny Sprawdzian ukończony!" : "Brawo! Zadanie ukończone!"}
         correctCount={correctCount}
         totalCount={queue.length}
         stars={computeStars(correctCount, queue.length)}
@@ -121,6 +130,7 @@ export function QuizGame({ module, mode, title, questions, onBack }: QuizGamePro
         currentStep={idx + 1}
         totalSteps={queue.length}
         score={correctCount}
+        moduleForCheatSheet={module}
       />
 
       <div className="card" style={{ padding: "26px 24px" }}>

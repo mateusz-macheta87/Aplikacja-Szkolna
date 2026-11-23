@@ -19,9 +19,10 @@ interface Token {
 interface SentenceBuilderGameProps {
   module: LearningModule;
   onBack: () => void;
+  onComplete?: (stars: number) => void;
 }
 
-export function SentenceBuilderGame({ module, onBack }: SentenceBuilderGameProps) {
+export function SentenceBuilderGame({ module, onBack, onComplete }: SentenceBuilderGameProps) {
   const { recordGameCompletion, recordItemResult } = useProgress();
   const [tasks, setTasks] = useState<SentenceTask[]>(module.sentenceTasks);
   const [idx, setIdx] = useState(0);
@@ -87,7 +88,9 @@ export function SentenceBuilderGame({ module, onBack }: SentenceBuilderGameProps
   const handleNext = () => {
     audioManager.stopSpeech();
     if (idx + 1 >= tasks.length) {
-      recordGameCompletion(module.id, "sentences", computeStars(correctCount, tasks.length));
+      const stars = computeStars(correctCount, tasks.length);
+      if (onComplete) onComplete(stars);
+      else recordGameCompletion(module.id, "sentences", stars);
       setFinished(true);
     } else {
       setIdx((i) => i + 1);
@@ -128,11 +131,12 @@ export function SentenceBuilderGame({ module, onBack }: SentenceBuilderGameProps
   return (
     <div className="game-stage">
       <GameHeader
-        title="Budowniczy Zdań"
+        title="I'm wearing — Zdania"
         onBack={onBack}
         currentStep={idx + 1}
         totalSteps={tasks.length}
         score={correctCount}
+        moduleForCheatSheet={module}
       />
 
       <div className="card" style={{ padding: "26px 24px" }}>

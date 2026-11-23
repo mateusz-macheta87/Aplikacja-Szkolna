@@ -27,9 +27,10 @@ interface LetterTile {
 interface SpellingBeeGameProps {
   module: LearningModule;
   onBack: () => void;
+  onComplete?: (stars: number) => void;
 }
 
-export function SpellingBeeGame({ module, onBack }: SpellingBeeGameProps) {
+export function SpellingBeeGame({ module, onBack, onComplete }: SpellingBeeGameProps) {
   const { recordGameCompletion, recordItemResult } = useProgress();
   const [tasks, setTasks] = useState<SpellingTask[]>(module.spellingTasks);
   const [idx, setIdx] = useState(0);
@@ -91,7 +92,6 @@ export function SpellingBeeGame({ module, onBack }: SpellingBeeGameProps) {
     if (!current || status === "correct") return;
     audioManager.playClick();
     if (inputMode === "tiles") {
-      // Find first mismatch index and auto-place the correct next letter
       const expectedChars = current.word.split("");
       const nextPos = pickedIds.length;
       if (nextPos >= expectedChars.length) return;
@@ -113,7 +113,9 @@ export function SpellingBeeGame({ module, onBack }: SpellingBeeGameProps) {
   const handleNext = () => {
     audioManager.stopSpeech();
     if (idx + 1 >= tasks.length) {
-      recordGameCompletion(module.id, "spelling", computeStars(correctCount, tasks.length));
+      const stars = computeStars(correctCount, tasks.length);
+      if (onComplete) onComplete(stars);
+      else recordGameCompletion(module.id, "spelling", stars);
       setFinished(true);
     } else {
       setIdx((i) => i + 1);
@@ -156,11 +158,12 @@ export function SpellingBeeGame({ module, onBack }: SpellingBeeGameProps) {
   return (
     <div className="game-stage">
       <GameHeader
-        title="Mistrz Pisowni"
+        title="Listen & write — Dyktando"
         onBack={onBack}
         currentStep={idx + 1}
         totalSteps={tasks.length}
         score={correctCount}
+        moduleForCheatSheet={module}
       />
 
       {/* Input Mode Switcher */}

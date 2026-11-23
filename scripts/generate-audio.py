@@ -93,6 +93,15 @@ CLIPS = {
     "s-blue-jumper-brown-trousers": "I'm wearing a blue jumper and brown trousers.",
     "s-red-coat-black-shoes": "I'm wearing a red coat and black shoes.",
     "s-bug-twister": "I'm wearing a new T-shirt, shorts and shoes.",
+    # Station 2: Colours (Colour the ... ...)
+    "s-colour-hat-red": "Colour the hat red.",
+    "s-colour-coat-yellow": "Colour the coat yellow.",
+    "s-colour-shorts-purple": "Colour the shorts purple.",
+    "s-colour-trousers-blue": "Colour the trousers blue.",
+    "s-colour-skirt-pink": "Colour the skirt pink.",
+    "s-colour-jumper-green": "Colour the jumper green.",
+    "s-colour-shoes-orange": "Colour the shoes orange.",
+    "s-colour-cap-blue": "Colour the cap blue.",
 }
 
 

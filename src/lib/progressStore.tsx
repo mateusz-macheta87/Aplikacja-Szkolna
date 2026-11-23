@@ -5,11 +5,37 @@ import type { GameModeId, LearningModule } from "@/types/content";
 import { learningModuleSchema } from "@/content/schemas";
 import { audioManager } from "@/lib/audioManager";
 
+export type StationId =
+  | "s1-clothes"
+  | "s2-colours"
+  | "s3-wearing"
+  | "s4-dressup"
+  | "s5-seasons"
+  | "s6-weather"
+  | "s7-listen"
+  | "s8-write"
+  | "s9-test";
+
+export const ALL_STATION_IDS: StationId[] = [
+  "s1-clothes",
+  "s2-colours",
+  "s3-wearing",
+  "s4-dressup",
+  "s5-seasons",
+  "s6-weather",
+  "s7-listen",
+  "s8-write",
+  "s9-test",
+];
+
 export interface ModuleProgress {
   modeStars: Partial<Record<GameModeId, number>>;
+  stationStars: Partial<Record<StationId, number>>;
   masteredVocabIds: string[];
   trickyItemIds: string[];
   bestExamScore?: { correct: number; total: number; date: string };
+  bestBlitzScore: number;
+  treasureOpened: boolean;
   sessionsCompleted: number;
 }
 
@@ -19,8 +45,13 @@ export interface PersistedState {
   muted: boolean;
   slowAudio: boolean;
   totalStars: number;
+  spendableStars: number;
   streakDays: number;
   lastActiveDate: string | null;
+  activeDates: string[];
+  unlockedStickers: string[];
+  ownedAccessories: string[];
+  equippedAccessories: string[];
   modules: Record<string, ModuleProgress>;
   customModules: LearningModule[];
 }
@@ -33,22 +64,48 @@ const DEFAULT_STATE: PersistedState = {
   muted: false,
   slowAudio: false,
   totalStars: 0,
-  streakDays: 1,
+  spendableStars: 0,
+  streakDays: 0,
   lastActiveDate: null,
+  activeDates: [],
+  unlockedStickers: [],
+  ownedAccessories: [],
+  equippedAccessories: [],
   modules: {},
   customModules: [],
 };
 
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
+export function todayDateKey(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function emptyModuleProgress(): ModuleProgress {
   return {
     modeStars: {},
+    stationStars: {},
     masteredVocabIds: [],
     trickyItemIds: [],
+    bestBlitzScore: 0,
+    treasureOpened: false,
     sessionsCompleted: 0,
+  };
+}
+
+function normalizeModuleProgress(mp?: Partial<ModuleProgress>): ModuleProgress {
+  return {
+    ...emptyModuleProgress(),
+    ...mp,
+    modeStars: mp?.modeStars ?? {},
+    stationStars: mp?.stationStars ?? {},
+    masteredVocabIds: Array.isArray(mp?.masteredVocabIds) ? mp.masteredVocabIds : [],
+    trickyItemIds: Array.isArray(mp?.trickyItemIds) ? mp.trickyItemIds : [],
+    bestBlitzScore: mp?.bestBlitzScore ?? 0,
+    treasureOpened: Boolean(mp?.treasureOpened),
+    sessionsCompleted: mp?.sessionsCompleted ?? 0,
   };
 }
 
@@ -63,6 +120,22 @@ interface ProgressContextValue {
     stars: number,
     examScore?: { correct: number; total: number }
   ) => void;
+  recordStationCompletion: (
+    moduleId: string,
+    stationId: StationId,
+    stars: number,
+    stickerId?: string,
+    examScore?: { correct: number; total: number }
+  ) => void;
+  recordBonusActivity: (
+    moduleId: string,
+    bonusStars: number,
+    stickerId?: string,
+    blitzScore?: number
+  ) => void;
+  openTreasureChest: (moduleId: string) => void;
+  buyAccessory: (accessoryId: string, cost: number) => boolean;
+  toggleAccessory: (accessoryId: string) => void;
   markVocabMastered: (moduleId: string, vocabId: string, mastered: boolean) => void;
   recordItemResult: (moduleId: string, itemId: string, correct: boolean) => void;
   toggleMuted: () => void;
@@ -89,10 +162,23 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<PersistedState>;
+          const normalizedModules: Record<string, ModuleProgress> = {};
+          if (parsed.modules) {
+            for (const [k, v] of Object.entries(parsed.modules)) {
+              normalizedModules[k] = normalizeModuleProgress(v);
+            }
+          }
           const merged: PersistedState = {
             ...DEFAULT_STATE,
             ...parsed,
-            modules: parsed.modules ?? {},
+            spendableStars: parsed.spendableStars ?? parsed.totalStars ?? 0,
+            activeDates: Array.isArray(parsed.activeDates) ? parsed.activeDates : [],
+            unlockedStickers: Array.isArray(parsed.unlockedStickers) ? parsed.unlockedStickers : [],
+            ownedAccessories: Array.isArray(parsed.ownedAccessories) ? parsed.ownedAccessories : [],
+            equippedAccessories: Array.isArray(parsed.equippedAccessories)
+              ? parsed.equippedAccessories
+              : [],
+            modules: normalizedModules,
             customModules: Array.isArray(parsed.customModules) ? parsed.customModules : [],
           };
           setState(merged);
@@ -100,7 +186,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
           audioManager.setSlowMode(Boolean(merged.slowAudio));
         }
       } catch {
-        // Ignore corrupt storage and start cleanly
+        // Ignore corrupt storage
       }
       setHydrated(true);
     });
@@ -123,34 +209,40 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   const getModuleProgress = useCallback(
     (moduleId: string): ModuleProgress => {
-      return state.modules[moduleId] ?? emptyModuleProgress();
+      return normalizeModuleProgress(state.modules[moduleId]);
     },
     [state.modules]
   );
 
   const getReadinessPercent = useCallback(
     (moduleId: string, totalVocab: number): number => {
-      const mp = state.modules[moduleId];
-      if (!mp) return 0;
-      const modeKeys: GameModeId[] = [
-        "flashcards",
-        "audio-quiz",
-        "dress-up",
-        "sentences",
-        "sorter",
-        "memory",
-        "spelling",
-        "exam",
-      ];
-      const earnedStars = modeKeys.reduce((sum, k) => sum + (mp.modeStars[k] ?? 0), 0);
-      const maxStars = modeKeys.length * 3;
-      const starsScore = (earnedStars / maxStars) * 70;
+      const mp = normalizeModuleProgress(state.modules[moduleId]);
+      const earnedStationStars = ALL_STATION_IDS.reduce(
+        (sum, id) => sum + (mp.stationStars[id] ?? 0),
+        0
+      );
+      const maxStars = ALL_STATION_IDS.length * 3;
+      const stationScore = (earnedStationStars / maxStars) * 75;
       const vocabScore =
-        totalVocab > 0 ? Math.min(1, mp.masteredVocabIds.length / totalVocab) * 30 : 0;
-      return Math.min(100, Math.round(starsScore + vocabScore));
+        totalVocab > 0 ? Math.min(1, mp.masteredVocabIds.length / totalVocab) * 25 : 0;
+      return Math.min(100, Math.round(stationScore + vocabScore));
     },
     [state.modules]
   );
+
+  const addTodayActivity = (prev: PersistedState): { activeDates: string[]; streakDays: number; lastActiveDate: string } => {
+    const today = todayDateKey();
+    const dates = prev.activeDates.includes(today)
+      ? prev.activeDates
+      : [...prev.activeDates, today];
+    const streakDays =
+      prev.lastActiveDate === today
+        ? Math.max(1, prev.streakDays)
+        : prev.lastActiveDate
+        ? prev.streakDays + 1
+        : 1;
+    return { activeDates: dates, streakDays, lastActiveDate: today };
+  };
 
   const recordGameCompletion = useCallback(
     (
@@ -159,31 +251,26 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
       stars: number,
       examScore?: { correct: number; total: number }
     ) => {
-      const today = todayKey();
       persist((prev) => {
-        const current = prev.modules[moduleId] ?? emptyModuleProgress();
+        const current = normalizeModuleProgress(prev.modules[moduleId]);
         const prevBest = current.modeStars[mode] ?? 0;
         const nextBest = Math.max(prevBest, stars);
-        const starDelta = Math.max(0, nextBest - prevBest);
-
-        let streakDays = prev.streakDays;
-        if (prev.lastActiveDate !== today) {
-          streakDays = prev.lastActiveDate ? prev.streakDays + 1 : 1;
-        }
+        const earnedNow = Math.max(1, stars);
+        const activity = addTodayActivity(prev);
 
         const nextBestExam =
           examScore &&
           (!current.bestExamScore ||
             examScore.correct / Math.max(1, examScore.total) >=
               current.bestExamScore.correct / Math.max(1, current.bestExamScore.total))
-            ? { ...examScore, date: today }
+            ? { ...examScore, date: activity.lastActiveDate }
             : current.bestExamScore;
 
         return {
           ...prev,
-          totalStars: prev.totalStars + starDelta,
-          streakDays,
-          lastActiveDate: today,
+          ...activity,
+          totalStars: prev.totalStars + Math.max(0, nextBest - prevBest),
+          spendableStars: prev.spendableStars + earnedNow,
           modules: {
             ...prev.modules,
             [moduleId]: {
@@ -199,10 +286,150 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     [persist]
   );
 
+  const recordStationCompletion = useCallback(
+    (
+      moduleId: string,
+      stationId: StationId,
+      stars: number,
+      stickerId?: string,
+      examScore?: { correct: number; total: number }
+    ) => {
+      persist((prev) => {
+        const current = normalizeModuleProgress(prev.modules[moduleId]);
+        const prevBest = current.stationStars[stationId] ?? 0;
+        const nextBest = Math.max(prevBest, stars);
+        const activity = addTodayActivity(prev);
+
+        const nextStickers =
+          stickerId && stars >= 1 && !prev.unlockedStickers.includes(stickerId)
+            ? [...prev.unlockedStickers, stickerId]
+            : prev.unlockedStickers;
+
+        const nextBestExam =
+          examScore &&
+          (!current.bestExamScore ||
+            examScore.correct / Math.max(1, examScore.total) >=
+              current.bestExamScore.correct / Math.max(1, current.bestExamScore.total))
+            ? { ...examScore, date: activity.lastActiveDate }
+            : current.bestExamScore;
+
+        return {
+          ...prev,
+          ...activity,
+          totalStars: prev.totalStars + Math.max(0, nextBest - prevBest),
+          spendableStars: prev.spendableStars + Math.max(1, stars),
+          unlockedStickers: nextStickers,
+          modules: {
+            ...prev.modules,
+            [moduleId]: {
+              ...current,
+              stationStars: { ...current.stationStars, [stationId]: nextBest },
+              bestExamScore: nextBestExam,
+              sessionsCompleted: current.sessionsCompleted + 1,
+            },
+          },
+        };
+      });
+    },
+    [persist]
+  );
+
+  const recordBonusActivity = useCallback(
+    (moduleId: string, bonusStars: number, stickerId?: string, blitzScore?: number) => {
+      persist((prev) => {
+        const current = normalizeModuleProgress(prev.modules[moduleId]);
+        const activity = addTodayActivity(prev);
+        const nextStickers =
+          stickerId && !prev.unlockedStickers.includes(stickerId)
+            ? [...prev.unlockedStickers, stickerId]
+            : prev.unlockedStickers;
+
+        return {
+          ...prev,
+          ...activity,
+          totalStars: prev.totalStars + bonusStars,
+          spendableStars: prev.spendableStars + bonusStars,
+          unlockedStickers: nextStickers,
+          modules: {
+            ...prev.modules,
+            [moduleId]: {
+              ...current,
+              bestBlitzScore:
+                blitzScore !== undefined
+                  ? Math.max(current.bestBlitzScore, blitzScore)
+                  : current.bestBlitzScore,
+              sessionsCompleted: current.sessionsCompleted + 1,
+            },
+          },
+        };
+      });
+    },
+    [persist]
+  );
+
+  const openTreasureChest = useCallback(
+    (moduleId: string) => {
+      persist((prev) => {
+        const current = normalizeModuleProgress(prev.modules[moduleId]);
+        if (current.treasureOpened) return prev;
+        const nextStickers = prev.unlockedStickers.includes("stk-treasure")
+          ? prev.unlockedStickers
+          : [...prev.unlockedStickers, "stk-treasure"];
+        return {
+          ...prev,
+          totalStars: prev.totalStars + 10,
+          spendableStars: prev.spendableStars + 10,
+          unlockedStickers: nextStickers,
+          modules: {
+            ...prev.modules,
+            [moduleId]: {
+              ...current,
+              treasureOpened: true,
+            },
+          },
+        };
+      });
+    },
+    [persist]
+  );
+
+  const buyAccessory = useCallback(
+    (accessoryId: string, cost: number): boolean => {
+      if (state.ownedAccessories.includes(accessoryId)) return true;
+      if (state.spendableStars < cost) return false;
+      persist((prev) => {
+        if (prev.ownedAccessories.includes(accessoryId) || prev.spendableStars < cost) {
+          return prev;
+        }
+        return {
+          ...prev,
+          spendableStars: prev.spendableStars - cost,
+          ownedAccessories: [...prev.ownedAccessories, accessoryId],
+          equippedAccessories: [...prev.equippedAccessories, accessoryId],
+        };
+      });
+      return true;
+    },
+    [state.ownedAccessories, state.spendableStars, persist]
+  );
+
+  const toggleAccessory = useCallback(
+    (accessoryId: string) => {
+      persist((prev) => {
+        if (!prev.ownedAccessories.includes(accessoryId)) return prev;
+        const equipped = prev.equippedAccessories.includes(accessoryId)
+          ? prev.equippedAccessories.filter((x) => x !== accessoryId)
+          : [...prev.equippedAccessories, accessoryId];
+        return { ...prev, equippedAccessories: equipped };
+      });
+    },
+    [persist]
+  );
+
   const markVocabMastered = useCallback(
     (moduleId: string, vocabId: string, mastered: boolean) => {
       persist((prev) => {
-        const current = prev.modules[moduleId] ?? emptyModuleProgress();
+        const current = normalizeModuleProgress(prev.modules[moduleId]);
         const masteredSet = new Set(current.masteredVocabIds);
         const trickySet = new Set(current.trickyItemIds);
         if (mastered) {
@@ -212,8 +439,14 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
           masteredSet.delete(vocabId);
           trickySet.add(vocabId);
         }
+        const nextStickers =
+          masteredSet.size >= 8 && !prev.unlockedStickers.includes("stk-dictionary")
+            ? [...prev.unlockedStickers, "stk-dictionary"]
+            : prev.unlockedStickers;
+
         return {
           ...prev,
+          unlockedStickers: nextStickers,
           modules: {
             ...prev.modules,
             [moduleId]: {
@@ -231,7 +464,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const recordItemResult = useCallback(
     (moduleId: string, itemId: string, correct: boolean) => {
       persist((prev) => {
-        const current = prev.modules[moduleId] ?? emptyModuleProgress();
+        const current = normalizeModuleProgress(prev.modules[moduleId]);
         const trickySet = new Set(current.trickyItemIds);
         if (correct) {
           trickySet.delete(itemId);
@@ -351,6 +584,11 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         getModuleProgress,
         getReadinessPercent,
         recordGameCompletion,
+        recordStationCompletion,
+        recordBonusActivity,
+        openTreasureChest,
+        buyAccessory,
+        toggleAccessory,
         markVocabMastered,
         recordItemResult,
         toggleMuted,

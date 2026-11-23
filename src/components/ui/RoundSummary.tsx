@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 import { RotateCcw, ArrowLeft, Star, Sparkles } from "lucide-react";
 import { audioManager } from "@/lib/audioManager";
 
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+import { MascotAvatar } from "@/components/ui/MascotAvatar";
 
 interface RoundSummaryProps {
   title: string;
@@ -52,14 +52,9 @@ export function RoundSummary({
   return (
     <div className="game-stage">
       <div className="card" style={{ textAlign: "center", padding: "36px 28px" }}>
-        <img
-          src={`${BASE_PATH}/icons/mascot.png`}
-          alt="Bzyczek gratuluje"
-          width={126}
-          height={126}
-          className="mascot-avatar"
-          style={{ margin: "0 auto 18px" }}
-        />
+        <div style={{ marginBottom: 18 }}>
+          <MascotAvatar size={136} cheering={stars >= 2} />
+        </div>
 
         <h2 style={{ fontSize: "2rem", marginBottom: 8 }}>{title}</h2>
         <p style={{ fontSize: "1.15rem", color: "var(--ink-secondary)", margin: "0 0 22px" }}>

@@ -13,12 +13,19 @@ import { useProgress } from "@/lib/progressStore";
 
 interface CategorySorterGameProps {
   module: LearningModule;
+  initialRoundIdx?: number;
   onBack: () => void;
+  onComplete?: (stars: number) => void;
 }
 
-export function CategorySorterGame({ module, onBack }: CategorySorterGameProps) {
+export function CategorySorterGame({
+  module,
+  initialRoundIdx = 0,
+  onBack,
+  onComplete,
+}: CategorySorterGameProps) {
   const { recordGameCompletion, recordItemResult } = useProgress();
-  const [roundIdx, setRoundIdx] = useState(0);
+  const [roundIdx, setRoundIdx] = useState(initialRoundIdx);
   const round: SortRound | undefined = module.sortRounds[roundIdx];
 
   const [items, setItems] = useState<SortItem[]>(() =>
@@ -74,7 +81,9 @@ export function CategorySorterGame({ module, onBack }: CategorySorterGameProps) 
 
   const handleNext = () => {
     if (itemIdx + 1 >= items.length) {
-      recordGameCompletion(module.id, "sorter", computeStars(correctCount, items.length));
+      const stars = computeStars(correctCount, items.length);
+      if (onComplete) onComplete(stars);
+      else recordGameCompletion(module.id, "sorter", stars);
       setFinished(true);
     } else {
       setItemIdx((i) => i + 1);
@@ -129,11 +138,12 @@ export function CategorySorterGame({ module, onBack }: CategorySorterGameProps) 
   return (
     <div className="game-stage">
       <GameHeader
-        title="Sortownia Gramatyczna"
+        title="Seasons — Pory roku i Sortownia"
         onBack={onBack}
         currentStep={itemIdx + 1}
         totalSteps={items.length}
         score={correctCount}
+        moduleForCheatSheet={module}
       />
 
       {/* Round Switcher */}
